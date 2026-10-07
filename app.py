@@ -1059,16 +1059,16 @@ def accept_request(rid):
     if not cur.rowcount:
         flash('This request can no longer be accepted.', 'error')
         return back('my_donations')
+    otp = new_otp()
     db.execute("UPDATE requests SET status = 'ACCEPTED', pickup_otp = ?, otp_attempts = 0, responded_at = ? WHERE id = ?",
-               (new_otp(), utcnow_str(), rid))
+               (otp, utcnow_str(), rid))
     for o in db.execute("SELECT id, ngo_id FROM requests WHERE donation_id = ? AND status = 'PENDING' AND id != ?", (r['donation_id'], rid)).fetchall():
         db.execute("UPDATE requests SET status = 'CANCELLED', responded_at = ? WHERE id = ?", (utcnow_str(), o['id']))
         notify(o['ngo_id'], f'"{r["food_name"]}" was given to another NGO.', '/my/requests')
-    notify(r['ngo_id'], f'Your request for "{r["food_name"]}" was accepted. Ask the donor for the pickup OTP when you collect it.', '/my/requests')
+    notify(r['ngo_id'], f'Your request for "{r["food_name"]}" was accepted. Your pickup OTP is {otp}. Enter this OTP when you collect the food.', '/my/requests')
     db.commit()
-    flash('Request accepted. Share the pickup OTP with the NGO only when they arrive.', 'success')
+    flash('Request accepted. The pickup OTP has been sent to the NGO.', 'success')
     return back('my_donations')
-
 
 @app.route('/requests/<int:rid>/reject', methods=['POST'])
 @role_required('donor')
@@ -1089,18 +1089,20 @@ def reject_request(rid):
 
 
 @app.route('/requests/<int:rid>/new-otp', methods=['POST'])
-@role_required('donor')
+@role_required('ngo')
 def regenerate_otp(rid):
     r = load_request(rid)
-    if not r or r['donor_id'] != g.user['id']:
+    if not r or r['ngo_id'] != g.user['id']:
         abort(404)
     if r['status'] != 'ACCEPTED' or r['dstatus'] != 'ACCEPTED':
         flash('A new OTP can only be created while pickup is pending.', 'error')
     else:
-        get_db().execute('UPDATE requests SET pickup_otp = ?, otp_attempts = 0 WHERE id = ?', (new_otp(), rid))
+        otp = new_otp()
+        get_db().execute('UPDATE requests SET pickup_otp = ?, otp_attempts = 0 WHERE id = ?', (otp, rid))
+        notify(r['ngo_id'], f'New pickup OTP for "{r["food_name"]}": {otp}.', '/my/requests')
         get_db().commit()
-        flash('New pickup OTP generated.', 'success')
-    return back('my_donations')
+        flash('New pickup OTP generated and sent to the NGO.', 'success')
+    return back('my_requests')
 
 
 @app.route('/requests/<int:rid>/pickup', methods=['POST'])
@@ -1114,7 +1116,7 @@ def verify_pickup(rid):
         flash('This donation is not waiting for pickup.', 'error')
         return back('my_requests')
     if r['otp_attempts'] >= MAX_OTP_ATTEMPTS:
-        flash('Too many wrong OTP attempts. Ask the donor to generate a new OTP.', 'error')
+        flash('Too many wrong OTP attempts. Generate a new pickup OTP.', 'error')
         return back('my_requests')
     otp = request.form.get('otp', '').strip()
     if not re.fullmatch(r'\d{6}', otp):
@@ -1132,7 +1134,7 @@ def verify_pickup(rid):
     db.execute('UPDATE requests SET otp_attempts = otp_attempts + 1 WHERE id = ?', (rid,))
     db.commit()
     left = MAX_OTP_ATTEMPTS - r['otp_attempts'] - 1
-    flash(f'Wrong OTP. {left} attempt(s) left.' if left else 'Wrong OTP. No attempts left - ask the donor for a new OTP.', 'error')
+    flash(f'Wrong OTP. {left} attempt(s) left.' if left else 'Wrong OTP. No attempts left - generate a new pickup OTP.', 'error')
     return back('my_requests')
 
 
@@ -1167,7 +1169,6 @@ def my_requests():
             'JOIN users u ON u.id = d.donor_id WHERE r.ngo_id = ? ORDER BY r.created_at DESC, r.id DESC', (g.user['id'],)):
         r = dict(r)
         r['shown'] = display_status(r['status'], r['dstatus'])
-        r['pickup_otp'] = None            # NGOs never see the OTP; the donor reads it out at handover
         rows.append(r)
     live = ('PENDING', 'ACCEPTED', 'PICKED_UP')
     return render_template('templates/my_requests.html', active=[r for r in rows if r['shown'] in live],
