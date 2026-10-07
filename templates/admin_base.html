@@ -1,0 +1,11 @@
+{% extends 'templates/base.html' %}
+{% block body_class %}bg-gray-100{% endblock %}
+{% block main_class %}max-w-6xl mx-auto py-8 px-4{% endblock %}
+{% block content %}
+    <div class="flex flex-wrap gap-2 mb-6 text-sm">
+        {% for href, label in [('/admin', 'Dashboard'), ('/admin/ngos', 'NGO verification'), ('/admin/users', 'Users'), ('/admin/donations', 'Donations'), ('/admin/reports', 'Reports')] %}
+        <a href="{{ href }}" class="px-4 py-2 rounded-full {{ 'bg-green-500 text-white' if request.path == href else 'bg-white text-gray-700 hover:bg-green-100 shadow' }}">{{ label }}</a>
+        {% endfor %}
+    </div>
+    {% block admin %}{% endblock %}
+{% endblock %}

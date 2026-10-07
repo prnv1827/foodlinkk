@@ -1,0 +1,61 @@
+{% extends 'templates/base.html' %}
+{% from 'templates/_macros.html' import err %}
+{% block title %}Sign up - FoodLink{% endblock %}
+{% block main_class %}flex flex-col items-center py-10 px-4{% endblock %}
+{% block content %}
+    <h1 class="text-3xl font-bold mb-6">Create your account 🍱</h1>
+    <form method="POST" enctype="multipart/form-data" class="bg-white p-8 rounded-lg shadow-md w-full max-w-md space-y-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div>
+            <label class="text-sm text-gray-600">I am a…</label>
+            <select name="role" id="role" class="w-full border p-3 rounded bg-white" onchange="document.getElementById('ngo-fields').style.display = this.value === 'ngo' ? 'block' : 'none'">
+                <option value="donor" {{ 'selected' if form.get('role') != 'ngo' }}>Donor (restaurant, home, event, shop)</option>
+                <option value="ngo" {{ 'selected' if form.get('role') == 'ngo' }}>NGO / Receiver</option>
+            </select>
+            {{ err(errors, 'role') }}
+        </div>
+        <div>
+            <input type="text" name="name" value="{{ form.get('name', '') }}" placeholder="Your name / organisation name" required class="w-full border p-3 rounded">
+            {{ err(errors, 'name') }}
+        </div>
+        <div>
+            <input type="email" name="email" value="{{ form.get('email', '') }}" placeholder="Email" required class="w-full border p-3 rounded">
+            {{ err(errors, 'email') }}
+        </div>
+        <div>
+            <input type="tel" name="phone" value="{{ form.get('phone', '') }}" placeholder="Phone" required class="w-full border p-3 rounded">
+            {{ err(errors, 'phone') }}
+        </div>
+        <div>
+            <input type="text" name="address" value="{{ form.get('address', '') }}" placeholder="Address" class="w-full border p-3 rounded">
+            {{ err(errors, 'address') }}
+            <input type="hidden" id="lat" name="lat" value="{{ form.get('lat', '') }}">
+            <input type="hidden" id="lng" name="lng" value="{{ form.get('lng', '') }}">
+            <div class="mt-2 text-sm">
+                <button type="button" data-geo-lat="lat" data-geo-lng="lng" class="text-blue-600 hover:underline">📍 Add my location (optional)</button>
+                <span class="geo-note text-gray-500 ml-2"></span>
+            </div>
+            {{ err(errors, 'location') }}
+        </div>
+        <div id="ngo-fields" style="display: {{ 'block' if form.get('role') == 'ngo' else 'none' }}">
+            <input type="text" name="reg_number" value="{{ form.get('reg_number', '') }}" placeholder="NGO registration number" class="w-full border p-3 rounded">
+            {{ err(errors, 'reg_number') }}
+            <input type="text" name="ngo_darpan_id" value="{{ form.get('ngo_darpan_id', '') }}" placeholder="NGO Darpan / government registration ID" class="w-full border p-3 rounded mt-2">
+            {{ err(errors, 'ngo_darpan_id') }}
+            <label class="block text-sm text-gray-600 mt-2">Registration proof (certificate / government document)</label>
+            <input type="file" name="verification_doc" accept=".pdf,.jpg,.jpeg,.png,.webp" class="w-full border p-3 rounded bg-white">
+            {{ err(errors, 'verification_doc') }}
+            <p class="text-xs text-gray-500 mt-1">This is stored privately and reviewed by an admin. Verification is based on the registration ID + official proof, not just a button click.</p>
+        </div>
+        <div>
+            <input type="password" name="password" placeholder="Password (8+ characters, letter + number)" required class="w-full border p-3 rounded">
+            {{ err(errors, 'password') }}
+        </div>
+        <div>
+            <input type="password" name="confirm" placeholder="Confirm password" required class="w-full border p-3 rounded">
+            {{ err(errors, 'confirm') }}
+        </div>
+        <button type="submit" class="bg-green-500 text-white w-full py-3 rounded hover:bg-green-600">Sign up</button>
+    </form>
+    <p class="mt-6 text-sm">Already have an account? <a href="/login" class="text-green-700 hover:underline">Log in</a></p>
+{% endblock %}

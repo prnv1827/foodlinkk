@@ -1,0 +1,22 @@
+{% extends 'templates/base.html' %}
+{% block title %}Report a problem - FoodLink{% endblock %}
+{% block main_class %}flex flex-col items-center py-10 px-4{% endblock %}
+{% block content %}
+    <h1 class="text-3xl font-bold mb-2">Report a problem</h1>
+    <p class="text-sm text-gray-600 mb-6">
+        {% if donation %}About the donation “{{ donation.food_name }}”.{% endif %}
+        {% if target %}About {{ target.name }}.{% endif %}
+        Reports are reviewed by an admin.</p>
+    <form method="POST" class="bg-white p-8 rounded-lg shadow-md w-full max-w-md space-y-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% if donation %}<input type="hidden" name="donation_id" value="{{ donation.id }}">{% endif %}
+        {% if target %}<input type="hidden" name="user_id" value="{{ target.id }}">{% endif %}
+        <select name="report_type" required class="w-full border p-3 rounded bg-white">
+            <option value="">What are you reporting?</option>
+            {% for k, label in REPORT_TYPES.items() %}<option value="{{ k }}" {{ 'selected' if form.get('report_type') == k }}>{{ label }}</option>{% endfor %}
+        </select>
+        <textarea name="description" rows="5" minlength="10" maxlength="1000" required placeholder="What happened? (10-1000 characters)" class="w-full border p-3 rounded">{{ form.get('description', '') }}</textarea>
+        <button type="submit" class="bg-red-500 text-white w-full py-3 rounded hover:bg-red-600">Submit report</button>
+    </form>
+    <a href="/dashboard" class="mt-6 text-green-700 hover:underline">← Back</a>
+{% endblock %}
