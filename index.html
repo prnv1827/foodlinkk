@@ -1,0 +1,18 @@
+{% extends 'templates/base.html' %}
+{% block title %}FoodLink - Home{% endblock %}
+{% block body_class %}bg-gradient-to-r from-green-300 to-blue-300{% endblock %}
+{% block main_class %}flex flex-col items-center justify-center text-center px-4{% endblock %}
+{% block main_attrs %} style="min-height: calc(100vh - 60px)"{% endblock %}
+{% block content %}
+    <h1 class="text-5xl font-bold mb-4 text-white">🍽️ Welcome to FoodLink!</h1>
+    <p class="text-white text-lg mb-8 max-w-xl">Share surplus food with verified NGOs before it goes to waste.</p>
+    <div class="space-x-6 space-y-3">
+        <a href="/post" class="inline-block bg-white text-green-600 px-6 py-3 rounded-full shadow hover:scale-105 transition">Post Food</a>
+        <a href="/find" class="inline-block bg-white text-blue-600 px-6 py-3 rounded-full shadow hover:scale-105 transition">Find Food</a>
+    </div>
+    {% if not g.user %}
+    <p class="mt-8 text-white text-sm">New here?
+        <a href="/signup?role=donor" class="underline font-semibold">Join as a donor</a> or
+        <a href="/signup?role=ngo" class="underline font-semibold">register your NGO</a>.</p>
+    {% endif %}
+{% endblock %}

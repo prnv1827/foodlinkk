@@ -1,0 +1,53 @@
+{% extends 'templates/admin_base.html' %}
+{% from 'templates/_macros.html' import badge, btn, localtime %}
+{% block title %}NGO verification - FoodLink{% endblock %}
+{% block admin %}
+    <h1 class="text-3xl font-bold mb-4">NGO verification</h1>
+    <div class="flex flex-wrap gap-2 mb-4 text-sm">
+        {% for k, label in [('pending', 'Pending'), ('approved', 'Approved (not verified)'), ('verified', 'Verified'), ('rejected', 'Rejected'), ('suspended', 'Suspended'), ('removed', 'Removed'), ('all', 'All')] %}
+        <a href="/admin/ngos?f={{ k }}" class="px-3 py-1 rounded {{ 'bg-blue-500 text-white' if f == k else 'bg-white text-gray-700 shadow' }}">{{ label }}</a>
+        {% endfor %}
+    </div>
+    {% if rows %}
+    <div class="space-y-3">{% for n in rows %}
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                    <p class="font-semibold">{{ n.name }}
+                        {{ badge(n.ngo_status) }}
+                        {% if n.is_verified %}<span class="text-green-700 text-sm">✔ Verified</span>{% endif %}
+                        {% if n.account_status != 'active' %}{{ badge('CANCELLED' if n.account_status == 'removed' else 'REJECTED') }} <span class="text-xs text-gray-500">{{ n.account_status }}</span>{% endif %}</p>
+                    <p class="text-sm text-gray-600">Reg. no: {{ n.reg_number }} · Darpan/Gov ID: {{ n.ngo_darpan_id or 'Missing' }} · {{ n.email }} · {{ n.phone }}</p>
+                    <p class="text-sm text-gray-600">{{ n.address }} · Registered {{ localtime(n.created_at) }}</p>
+                    <div class="mt-2 text-xs">
+                        {% if n.verification_doc %}
+                            <span class="text-green-700 font-medium">✓ Registration proof uploaded</span>
+                            · <a class="text-blue-700 hover:underline" target="_blank" rel="noopener" href="/admin/ngos/{{ n.id }}/verification-document">View proof</a>
+                        {% else %}
+                            <span class="text-red-600 font-medium">✗ Registration proof missing</span>
+                        {% endif %}
+                        {% if n.email_verified %} · <span class="text-green-700">Email verified</span>{% else %} · <span class="text-yellow-700">Email not verified</span>{% endif %}
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-1">
+                    {% if n.account_status != 'removed' %}
+                        {% if n.ngo_status != 'APPROVED' %}{{ btn('/admin/users/%d/approve'|format(n.id), 'Approve', 'bg-green-500 hover:bg-green-600') }}{% endif %}
+                        {% if n.ngo_status == 'APPROVED' and not n.is_verified %}
+                            {% if n.ngo_darpan_id and n.verification_doc and n.email_verified %}
+                                {{ btn('/admin/users/%d/verify'|format(n.id), 'Verify evidence', 'bg-blue-500 hover:bg-blue-600', 'I have checked the registration ID against the official record and reviewed the uploaded registration proof. Verify this NGO?') }}
+                            {% else %}
+                                <span class="px-2 py-1 rounded bg-gray-100 text-gray-500 text-xs">Evidence required</span>
+                            {% endif %}
+                        {% endif %}
+                        {% if n.is_verified %}{{ btn('/admin/users/%d/unverify'|format(n.id), 'Remove verification', 'bg-yellow-600 hover:bg-yellow-700', 'Remove verification? Its pending requests will be cancelled.') }}{% endif %}
+                        {% if n.ngo_status != 'REJECTED' %}{{ btn('/admin/users/%d/reject'|format(n.id), 'Reject', 'bg-red-500 hover:bg-red-600', 'Reject this NGO?') }}{% endif %}
+                        {% if n.account_status == 'active' %}{{ btn('/admin/users/%d/suspend'|format(n.id), 'Suspend', 'bg-gray-500 hover:bg-gray-600', 'Suspend this NGO? It will be logged out and cannot log in.') }}
+                        {% else %}{{ btn('/admin/users/%d/reactivate'|format(n.id), 'Reactivate', 'bg-green-500 hover:bg-green-600') }}{% endif %}
+                        {{ btn('/admin/users/%d/remove'|format(n.id), 'Remove', 'bg-red-700 hover:bg-red-800', 'Remove this NGO account?') }}
+                    {% else %}{{ btn('/admin/users/%d/reactivate'|format(n.id), 'Restore', 'bg-green-500 hover:bg-green-600') }}{% endif %}
+                </div>
+            </div>
+        </div>
+    {% endfor %}</div>
+    {% else %}<p class="text-gray-600">No NGOs in this list.</p>{% endif %}
+{% endblock %}

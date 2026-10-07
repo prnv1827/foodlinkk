@@ -1,0 +1,59 @@
+{% extends 'templates/base.html' %}
+{% from 'templates/_macros.html' import badge, countdown, localtime, vegmark, btn, foodimg %}
+{% block title %}My Requests - FoodLink{% endblock %}
+{% block body_class %}bg-blue-100{% endblock %}
+{% block main_class %}max-w-5xl mx-auto py-8 px-4{% endblock %}
+
+{% macro card(r) %}
+<div class="bg-white p-5 rounded-lg shadow-md">
+    <div class="flex flex-col md:flex-row gap-4">
+        <div class="md:w-40 flex-shrink-0">{{ foodimg(r.image_path, 'h-28 w-full') }}</div>
+        <div class="flex-1">
+            <div class="flex items-start justify-between gap-2">
+                <h3 class="text-lg font-semibold text-green-600">{{ r.food_name }}</h3>{{ badge(r.shown) }}
+            </div>
+            <p class="text-sm mt-1">{{ vegmark(r.food_type) }} <span class="text-gray-500">· {{ r.category }} · {{ '%g'|format(r.quantity) }} {{ r.unit }} · {{ r.servings }} servings</span></p>
+            <p class="text-sm text-gray-700 mt-1">📍 {{ r.address }} · Donor: {{ r.donor_name }}</p>
+            {% if r.shown in ('PENDING', 'ACCEPTED') %}<p class="text-sm text-gray-700">Pickup deadline: {{ localtime(r.expiry_time) }} · {{ countdown(r.expiry_time) }}</p>{% endif %}
+
+            {% if r.shown == 'PENDING' %}
+                <p class="text-sm text-yellow-700 mt-2">Waiting for the donor to respond.</p>
+            {% elif r.shown == 'ACCEPTED' %}
+                <div class="mt-3 bg-blue-50 border border-blue-200 rounded p-3">
+                    <p class="text-sm text-blue-900"><strong>Accepted!</strong> Contact: {{ r.contact_name or r.donor_name }} · <a class="underline" href="tel:{{ r.contact_phone }}">{{ r.contact_phone }}</a></p>
+                    {% if r.instructions %}<p class="text-sm text-gray-700 mt-1">Instructions: {{ r.instructions }}</p>{% endif %}
+                    <form method="POST" action="/requests/{{ r.id }}/pickup" class="mt-3 flex flex-wrap items-center gap-2">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="text" name="otp" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required placeholder="6-digit pickup OTP" class="border p-2 rounded w-44 tracking-widest">
+                        <button type="submit" class="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600">Confirm pickup</button>
+                    </form>
+                    <p class="text-xs text-gray-500 mt-1">Ask the donor for the OTP when you collect the food.{% if r.otp_attempts %} Wrong attempts: {{ r.otp_attempts }}/{{ MAX_OTP_ATTEMPTS }}.{% endif %}</p>
+                </div>
+            {% elif r.shown == 'PICKED_UP' %}
+                <div class="mt-3">{{ btn('/requests/%d/complete'|format(r.id), 'Mark as completed (food distributed)', 'bg-green-500 hover:bg-green-600') }}</div>
+            {% elif r.shown == 'CANCELLED' %}
+                <p class="text-sm text-gray-500 mt-2">This request was cancelled (for example, the donor chose another NGO).</p>
+            {% endif %}
+            <a href="/report?donation_id={{ r.donation_id }}&user_id={{ r.donor_id }}" class="text-xs text-gray-400 hover:text-red-600 hover:underline">Report a problem</a>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+{% block content %}
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-3xl font-bold text-blue-700">My Requests 🍛</h1>
+        <a href="/find" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Find Food</a>
+    </div>
+    {% if not can_request %}
+    <p class="bg-yellow-100 text-yellow-800 text-sm rounded p-3 mb-6">You can browse food, but only approved and verified NGOs can send requests.</p>
+    {% endif %}
+
+    <h2 class="text-xl font-semibold mb-3">Current</h2>
+    {% if active %}<div class="space-y-4 mb-10">{% for r in active %}{{ card(r) }}{% endfor %}</div>
+    {% else %}<p class="text-gray-600 mb-10">No active requests. <a href="/find" class="text-blue-700 underline">Find food</a> to request.</p>{% endif %}
+
+    <h2 class="text-xl font-semibold mb-3">History</h2>
+    {% if history %}<div class="space-y-4">{% for r in history %}{{ card(r) }}{% endfor %}</div>
+    {% else %}<p class="text-gray-600">Completed, expired, rejected and cancelled requests will appear here.</p>{% endif %}
+{% endblock %}

@@ -1,0 +1,96 @@
+{% extends 'templates/base.html' %}
+{% from 'templates/_macros.html' import err %}
+{% block title %}Post Food - FoodLink{% endblock %}
+{% block body_class %}bg-green-100{% endblock %}
+{% block main_class %}flex flex-col items-center py-8 px-4{% endblock %}
+{% block content %}
+    <h1 class="text-3xl font-bold mb-6">Post Available Food 🍱</h1>
+    <form method="POST" enctype="multipart/form-data" class="bg-white p-8 rounded-lg shadow-md w-full max-w-2xl space-y-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="tz_offset" value="">
+        {% if errors %}<p class="text-red-600 text-sm">Please fix the highlighted fields.{% if errors.image or request.files.get('image') %} If you chose a photo, attach it again.{% endif %}</p>{% endif %}
+
+        <div>
+            <input type="text" name="food_name" value="{{ form.get('food_name', '') }}" maxlength="100" placeholder="Food Name (e.g. Rice, Bread)" required class="w-full border p-3 rounded">
+            {{ err(errors, 'food_name') }}
+        </div>
+        <div class="grid md:grid-cols-2 gap-4">
+            <div>
+                <select name="category" required class="w-full border p-3 rounded bg-white">
+                    <option value="">Food category</option>
+                    {% for c in CATEGORIES %}<option value="{{ c }}" {{ 'selected' if form.get('category') == c }}>{{ c }}</option>{% endfor %}
+                </select>
+                {{ err(errors, 'category') }}
+            </div>
+            <div>
+                <select name="food_type" required class="w-full border p-3 rounded bg-white">
+                    <option value="">Veg / Non-veg</option>
+                    <option value="veg" {{ 'selected' if form.get('food_type') == 'veg' }}>Veg</option>
+                    <option value="non-veg" {{ 'selected' if form.get('food_type') == 'non-veg' }}>Non-veg</option>
+                </select>
+                {{ err(errors, 'food_type') }}
+            </div>
+        </div>
+        <div class="grid md:grid-cols-3 gap-4">
+            <div>
+                <input type="number" name="quantity" value="{{ form.get('quantity', '') }}" min="0.1" step="any" placeholder="Quantity (e.g. 30)" required class="w-full border p-3 rounded">
+                {{ err(errors, 'quantity') }}
+            </div>
+            <div>
+                <select name="unit" required class="w-full border p-3 rounded bg-white">
+                    {% for u in UNITS %}<option value="{{ u }}" {{ 'selected' if form.get('unit') == u }}>{{ u }}</option>{% endfor %}
+                </select>
+                {{ err(errors, 'unit') }}
+            </div>
+            <div>
+                <input type="number" name="servings" value="{{ form.get('servings', '') }}" min="1" step="1" placeholder="Servings" required class="w-full border p-3 rounded">
+                {{ err(errors, 'servings') }}
+            </div>
+        </div>
+        <div class="grid md:grid-cols-2 gap-4">
+            <div>
+                <label class="text-sm text-gray-600">Prepared on</label>
+                <input type="datetime-local" name="prepared_at" value="{{ form.get('prepared_at', '') }}" required class="w-full border p-3 rounded">
+                {{ err(errors, 'prepared_at') }}
+            </div>
+            <div>
+                <label class="text-sm text-gray-600">Pickup deadline (food expires)</label>
+                <input type="datetime-local" name="expiry_time" value="{{ form.get('expiry_time', '') }}" required class="w-full border p-3 rounded">
+                {{ err(errors, 'expiry_time') }}
+            </div>
+        </div>
+        <div>
+            <label class="text-sm text-gray-600">Food photo (JPG, PNG or WebP, up to 5 MB)</label>
+            <input type="file" name="image" accept="image/jpeg,image/png,image/webp" class="w-full border p-3 rounded bg-white">
+            {{ err(errors, 'image') }}
+        </div>
+        <div>
+            <input type="text" name="address" value="{{ form.get('address', '') }}" maxlength="250" placeholder="Pickup address (e.g. Sector 62 Noida)" required class="w-full border p-3 rounded">
+            {{ err(errors, 'address') }}
+            <input type="hidden" id="lat" name="lat" value="{{ form.get('lat', '') }}">
+            <input type="hidden" id="lng" name="lng" value="{{ form.get('lng', '') }}">
+            <div class="mt-2 text-sm">
+                <button type="button" data-geo-lat="lat" data-geo-lng="lng" class="text-blue-600 hover:underline">📍 Add my current location (helps nearby NGOs find you)</button>
+                <span class="geo-note text-gray-500 ml-2"></span>
+            </div>
+            {{ err(errors, 'location') }}
+        </div>
+        <div class="grid md:grid-cols-2 gap-4">
+            <div>
+                <input type="text" name="contact_name" value="{{ form.get('contact_name', '') }}" maxlength="100" placeholder="Contact person" class="w-full border p-3 rounded">
+                {{ err(errors, 'contact_name') }}
+            </div>
+            <div>
+                <input type="tel" name="contact_phone" value="{{ form.get('contact_phone', '') }}" placeholder="Contact phone" required class="w-full border p-3 rounded">
+                {{ err(errors, 'contact_phone') }}
+            </div>
+        </div>
+        <div>
+            <textarea name="instructions" rows="3" maxlength="500" placeholder="Additional instructions (e.g. use the back gate, bring containers)" class="w-full border p-3 rounded">{{ form.get('instructions', '') }}</textarea>
+            {{ err(errors, 'instructions') }}
+        </div>
+        <p class="text-xs text-gray-500">Your phone number and instructions are shared only with the NGO whose request you accept.</p>
+        <button type="submit" class="bg-green-500 text-white w-full py-3 rounded hover:bg-green-600">Post Food</button>
+    </form>
+    <a href="/" class="mt-6 text-green-700 hover:underline">← Back to Home</a>
+{% endblock %}

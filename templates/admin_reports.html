@@ -1,0 +1,30 @@
+{% extends 'templates/admin_base.html' %}
+{% from 'templates/_macros.html' import badge, localtime %}
+{% block title %}Reports - FoodLink{% endblock %}
+{% block admin %}
+    <h1 class="text-3xl font-bold mb-4">Reports</h1>
+    <div class="flex gap-2 mb-4 text-sm">
+        {% for k, label in [('open', 'Open'), ('resolved', 'Resolved'), ('all', 'All')] %}
+        <a href="/admin/reports?f={{ k }}" class="px-3 py-1 rounded {{ 'bg-blue-500 text-white' if f == k else 'bg-white text-gray-700 shadow' }}">{{ label }}</a>{% endfor %}
+    </div>
+    {% if rows %}
+    <div class="space-y-3">{% for r in rows %}
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="flex items-start justify-between gap-2">
+                <p class="font-semibold">{{ REPORT_TYPES[r.report_type] }} {{ badge(r.status) }}</p>
+                <span class="text-xs text-gray-500">{{ localtime(r.created_at) }}</span>
+            </div>
+            <p class="text-sm text-gray-600 mt-1">By {{ r.reporter }}{% if r.target_name %} · About {{ r.target_name }} ({{ r.target_role }}){% endif %}{% if r.food_name %} · Donation: {{ r.food_name }}{% endif %}</p>
+            <p class="text-gray-800 mt-2">{{ r.description }}</p>
+            {% if r.status == 'OPEN' %}
+            <form method="POST" action="/admin/reports/{{ r.id }}/resolve" class="mt-3 flex flex-wrap gap-2">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="text" name="note" maxlength="500" placeholder="Resolution note (optional)" class="border p-2 rounded flex-1 text-sm">
+                <button class="bg-green-500 text-white px-4 rounded hover:bg-green-600 text-sm">Resolve</button>
+                {% if r.target_id %}<a href="/admin/users?q={{ r.target_name|urlencode }}" class="text-sm text-blue-600 hover:underline self-center">Manage user</a>{% endif %}
+            </form>
+            {% elif r.resolution_note %}<p class="text-sm text-green-800 mt-2">Resolution: {{ r.resolution_note }}</p>{% endif %}
+        </div>
+    {% endfor %}</div>
+    {% else %}<p class="text-gray-600">Nothing here. 🎉</p>{% endif %}
+{% endblock %}
