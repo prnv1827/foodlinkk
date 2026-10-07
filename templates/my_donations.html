@@ -36,14 +36,10 @@
                 {% elif r.status == 'ACCEPTED' %}{{ badge(d.status) }}
                 {% else %}{{ badge(r.status) }}{% endif %}
             </div>
-            {% if r.status == 'ACCEPTED' and d.status == 'ACCEPTED' and r.pickup_otp %}
+            {% if r.status == 'ACCEPTED' and d.status == 'ACCEPTED' %}
             <div class="mt-3 bg-blue-50 border border-blue-200 rounded p-3">
-                <p class="text-sm text-blue-900">Pickup OTP — give it to {{ r.ngo_name }} when they arrive:</p>
-                <p class="text-3xl font-bold tracking-widest text-blue-700 my-1">{{ r.pickup_otp }}</p>
-                <p class="text-xs text-gray-600">Wrong attempts: {{ r.otp_attempts }}/{{ MAX_OTP_ATTEMPTS }}
-                    {% if r.otp_attempts >= MAX_OTP_ATTEMPTS %}<strong class="text-red-600">· Locked</strong>{% endif %}
-                    · {{ btn('/requests/%d/new-otp'|format(r.id), 'Generate new OTP', 'bg-blue-500 hover:bg-blue-600', 'Create a new OTP? The old one will stop working.') }}
-                    <a href="/report?donation_id={{ d.id }}&user_id={{ r.ngo_id }}&type=no_show" class="text-gray-500 hover:text-red-600 hover:underline ml-2">Report no-show</a></p>
+                <p class="text-sm text-blue-900">Pickup accepted. The pickup OTP has been sent to the NGO. They will use it to confirm the handover.</p>
+                <a href="/report?donation_id={{ d.id }}&user_id={{ r.ngo_id }}&type=no_show" class="text-xs text-gray-500 hover:text-red-600 hover:underline">Report no-show</a>
             </div>
             {% elif r.status == 'ACCEPTED' and d.status == 'PICKED_UP' %}
             <div class="mt-2">{{ btn('/requests/%d/complete'|format(r.id), 'Mark as completed', 'bg-green-500 hover:bg-green-600') }}
